@@ -1,0 +1,23 @@
+﻿{
+  // Content App Definition
+  "contentApps": [
+    {
+      "name": "Editing Look", 
+      "alias": "byte5EditingLookContentApp", 
+      "weight": 0, 
+      "icon": "icon-link", 
+      "view": "~/App_Plugins/byte5EditingLookContentApp/editingLook.html",
+                                                                         
+      "show": [
+        "+content/*", 
+        "-media/*"
+      ] 
+    }
+  ],
+  "javascript": [
+    "~/App_Plugins/byte5EditingLookContentApp/editingLook.controller.js",
+    "~/App_Plugins/byte5EditingLookContentApp/editingLook.resource.js",
+    "~/App_Plugins/byte5EditingLookContentApp/PackageOptions/packageOptions.resource.js"
+  ]
+}
+

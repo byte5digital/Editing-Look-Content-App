@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<language alias="de_de" intName="German (DE)" localName="Deutsch (DE)" lcid="" culture="de-DE">
+  <creator>
+    <name>
+      <![CDATA[S&ouml;ren Deger]]>
+    </name>
+    <link>https://twitter.com/SoerenDeger</link>
+  </creator>
+  <area alias="byte5EditingLookContentApp">
+    <key alias=""></key>
+  </area>
+  <area alias="byte5EditingLookContentAppInstaller">
+    <key alias=""></key>
+  </area>
+</language>

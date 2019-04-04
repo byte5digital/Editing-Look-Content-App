@@ -1,0 +1,7 @@
+﻿/* The class is-locked should be set on the li item which represents the tree node */
+.is-locked > .umb-tree-item__inner > .umb-tree-item__annotation:before {
+    content: "\e0a7";
+    color: #ff0000;
+    font-size: 12px;
+    margin-left: -22px;
+}

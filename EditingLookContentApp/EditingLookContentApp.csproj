@@ -264,6 +264,8 @@
     <Content Include="Web.config" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Composer\EditingLookComponent.cs" />
+    <Compile Include="Composer\EditingLookComposer.cs" />
     <Compile Include="Composer\EventHandler.cs" />
     <Compile Include="Composer\Events.cs" />
     <Compile Include="Controllers\ApiController.cs" />

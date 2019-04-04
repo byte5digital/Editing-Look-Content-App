@@ -12,7 +12,7 @@ namespace byte5.EditingLookContentApp.Migrations
         {
             if (!TableExists("EditingLook"))
             {
-                //Create.Table<EditingLook>().Do();
+                Create.Table<EditingLook>().Do();
             }
         }
 

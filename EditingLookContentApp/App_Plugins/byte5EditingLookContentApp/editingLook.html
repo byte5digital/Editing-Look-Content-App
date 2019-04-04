@@ -1,4 +1,32 @@
 ﻿<div class="umb-box" ng-controller="byte5.EditingLookContentApp as vm">
-   
+
+    <div class="umb-user-cards">
+        <div class="umb-user-card">
+            <div class="umb-user-card__content">
+
+                <div class="umb-user-card__avatar">
+                    <umb-avatar size="l" color="secondary" name="{{user.name}}" img-src="{{user.avatars[2]}}" img-srcset="{{user.avatars[3]}} 2x, {{user.avatars[4]}} 3x">
+                    </umb-avatar>
+                </div>
+                <div class="umb-user-card__name">{{user.name}}</div>
+
+                <div class="umb-user-card__group">
+                    <span ng-repeat="userGroup in user.userGroups">{{ userGroup.name }}<span ng-if="!$last">, </span></span>
+                </div>
+                
+                <umb-button ng-if="vm.isAdmin === 'takeOverEditing'"
+                            button-style="action"
+                            state="vm.page.takeOverEditingButtonState"
+                            type="button"
+                            action="vm.takeOverEditing(user.currentUdi, user.currentUserId)"
+                            label-key="user_takeOverEditing"
+                            size="m">
+                </umb-button>
+
+            </div>
+        </div>
+    </div>
+
 </div>
+
 

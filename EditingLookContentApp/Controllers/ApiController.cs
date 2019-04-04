@@ -6,12 +6,20 @@ using System.Web.Mvc;
 using Umbraco.Web.Editors;
 using byte5.EditingLookContentApp.Models;
 using Umbraco.Web.Mvc;
+using Umbraco.Web.Composing;
+using NPoco;
+using Umbraco.Core;
 
 namespace byte5.EditingLookContentApp.Controllers
 {
     [PluginController("byte5EditingLook")]
     public class ApiController : UmbracoAuthorizedJsonController
     {
+        #region ClassMember
+        //-----------------------------------------------------------------
+        //-----------------------------------------------------------------
+        #endregion // ClassMember
+
         #region Methods
 
         #region GetCurrentUser
@@ -25,6 +33,26 @@ namespace byte5.EditingLookContentApp.Controllers
         [HttpGet]
         public Umbraco.Core.Models.Membership.IUser GetCurrentUser(string nodeUid)
         {
+            EditingLook result = null;
+            using (var scope = Current.ScopeProvider.CreateScope())
+            {
+                // get editing entry
+                var sql = $"select * from EditingLook where NodeUid = '{nodeUid}'";
+                result = scope.Database.ExecuteScalar<EditingLook>(sql);
+
+                if (result != null && result.SubscribeDate.AddMinutes(2) < DateTime.Now)
+                {
+                    DeleteEditingEntry(result.NodeUid, result.UserId);
+                    return null;
+                }
+
+                // get the user and return
+                //return result;
+
+            }
+
+
+
             throw new NotImplementedException();
         }
         #endregion // GetCurrentUser
@@ -40,8 +68,6 @@ namespace byte5.EditingLookContentApp.Controllers
         //-----------------------------------------------------------------
         public EditingLook CreateEditingEntry(string nodeUid, int currentUserId)
         {
-            EditingLook model = new EditingLook(0, nodeUid, currentUserId, DateTime.Now);
-
             //save model
 
             throw new NotImplementedException();

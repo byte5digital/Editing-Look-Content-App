@@ -266,6 +266,7 @@
   <ItemGroup>
     <Compile Include="Composer\EventHandler.cs" />
     <Compile Include="Composer\Events.cs" />
+    <Compile Include="Controllers\ApiController.cs" />
     <Compile Include="Models\EditingLook.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="test.cs" />

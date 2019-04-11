@@ -1,5 +1,5 @@
 ﻿angular.module("umbraco")
-    .controller("byte5.EditingLookContentApp", function ($scope, byte5EditingLookResource) {
+    .controller("byte5.EditingLookContentApp", function ($scope, editorState, byte5EditingLookResource) {
         var vm = this;
         vm.currentNodeId = editorState.current.udi;
 

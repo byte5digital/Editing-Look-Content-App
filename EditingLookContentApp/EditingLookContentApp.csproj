@@ -252,6 +252,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="App_Plugins\byte5EditingLookContentApp\editingLook.controller.js" />
+    <Content Include="App_Plugins\byte5EditingLookContentApp\editingLook.css" />
     <Content Include="App_Plugins\byte5EditingLookContentApp\editingLook.html" />
     <Content Include="App_Plugins\byte5EditingLookContentApp\editingLook.resource.js" />
     <Content Include="App_Plugins\byte5EditingLookContentApp\lang\de-DE.xml" />

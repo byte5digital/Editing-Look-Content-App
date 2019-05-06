@@ -9,6 +9,7 @@ using Umbraco.Web.Mvc;
 using Umbraco.Web.Composing;
 using NPoco;
 using Umbraco.Core;
+using Umbraco.Core.Persistence;
 
 namespace byte5.EditingLookContentApp.Controllers
 {
@@ -17,10 +18,9 @@ namespace byte5.EditingLookContentApp.Controllers
     {
         #region ClassMember
         //-----------------------------------------------------------------
+        string DbName = "EditingLook";
         //-----------------------------------------------------------------
         #endregion // ClassMember
-
-        #region Methods
 
         #region GetCurrentUser
         //-----------------------------------------------------------------
@@ -33,59 +33,103 @@ namespace byte5.EditingLookContentApp.Controllers
         [HttpGet]
         public Umbraco.Core.Models.Membership.IUser GetCurrentUser(string nodeUid)
         {
-            EditingLook result = null;
-            using (var scope = Current.ScopeProvider.CreateScope())
+            // TEST:
+            this.CreateEditingEntry(nodeUid, 7);
+            this.GetEditingEntry(nodeUid);
+            this.UpdateEditingEntry(nodeUid, 1);
+            this.GetEditingEntry(nodeUid);
+            this.DeleteEditingEntry(nodeUid, 1);
+
+
+
+
+            EditingLook entry = this.GetEditingEntry(nodeUid);
+
+            if (entry != null)
             {
-                // get editing entry
-                var sql = $"select * from EditingLook where NodeUid = '{nodeUid}'";
-                result = scope.Database.ExecuteScalar<EditingLook>(sql);
-
-                if (result != null && result.SubscribeDate.AddMinutes(2) < DateTime.Now)
-                {
-                    DeleteEditingEntry(result.NodeUid, result.UserId);
-                    return null;
-                }
-
-                // get the user and return
-                //return result;
-
+                // return the umbraco user
+                return Services.UserService.GetUserById(entry.UserId);
             }
 
-
-
-            throw new NotImplementedException();
+            return null;
         }
         #endregion // GetCurrentUser
 
         #region CreateEditingEntry
         //-----------------------------------------------------------------
         /// <summary>
-        /// creates and saves a new editing entry.
+        /// Creates and saves a new editing entry.
         /// </summary>
         /// <param name="nodeUid">The uid of the node</param>
         /// <param name="currentUserId">the id of the current user</param>
-        /// <returns>the created EditingLook</returns>
+        /// <returns>The created EditingLook</returns>
         //-----------------------------------------------------------------
+        [HttpPost]
         public EditingLook CreateEditingEntry(string nodeUid, int currentUserId)
         {
-            //save model
+            // check for existing entry
+            EditingLook entry = this.GetEditingEntry(nodeUid);
 
-            throw new NotImplementedException();
+            if (entry == null)
+            {
+                // create editing look object
+                EditingLook editingLook = new EditingLook()
+                {
+                    NodeUid = nodeUid,
+                    UserId = currentUserId,
+                    SubscribeDate = DateTime.Now
+                };
+
+                using (var scope = Current.ScopeProvider.CreateScope(autoComplete: true))
+                {
+                    // insert editing entry
+                    scope.Database.Insert<EditingLook>(editingLook);
+                }
+
+                return editingLook;
+            }
+
+            // entry already exists -> update entry
+            return this.UpdateEditingEntry(nodeUid, currentUserId, entry);
         }
         #endregion // CreateEditingEntry
 
         #region UpdateEditingEntry
         //-----------------------------------------------------------------
         /// <summary>
-        /// Updates an existing editing entry
+        /// Updates an existing editing entry or creates it.
         /// </summary>
         /// <param name="nodeUid">The uid of the node</param>
-        /// <param name="currentUserId">the id of the current user</param>
-        /// <returns>the updated editing entry</returns>
+        /// <param name="currentUserId">The id of the current user</param>
+        /// <param name="entry">The entry to update</param>
+        /// <returns>The updated or created editing entry</returns>
         //-----------------------------------------------------------------
-        public EditingLook UpdateEditingEntry(string nodeUid, int currentUserId)
+        [HttpPut]
+        public EditingLook UpdateEditingEntry(string nodeUid, int currentUserId, EditingLook entry = null)
         {
-            throw new NotImplementedException();
+            // check for existing entry
+            if (entry == null) entry = GetEditingEntry(nodeUid);
+
+            if (entry != null)
+            {
+                using (var scope = Current.ScopeProvider.CreateScope(autoComplete: true))
+                {
+                    // update editing entry
+                    NPocoSqlExtensions.SqlUpd<EditingLook> update = new NPocoSqlExtensions.SqlUpd<EditingLook>(scope.SqlContext);
+                    update.SetExpressions.Add(new Tuple<string, object>("UserId", currentUserId));
+                    update.SetExpressions.Add(new Tuple<string, object>("SubscribeDate", DateTime.Now));
+
+                    Sql sql = scope.SqlContext.Sql().Update<EditingLook>(e => update);
+                    scope.Database.Update<EditingLook>(sql);
+                }
+            }
+            else
+            {
+                // entry doesn't exist -> create the entry
+                this.CreateEditingEntry(nodeUid, currentUserId);
+            }
+
+            return entry;
         }
         #endregion // UpdateEditingEntry
 
@@ -98,12 +142,54 @@ namespace byte5.EditingLookContentApp.Controllers
         /// <param name="currentUserId">the id of the current user</param>
         /// <returns></returns>
         //-----------------------------------------------------------------
+        [HttpDelete]
         public void DeleteEditingEntry(string nodeUid, int currentUserId)
         {
-            throw new NotImplementedException();
+            using (var scope = Current.ScopeProvider.CreateScope(autoComplete: true))
+            {
+                // delete editing entry
+                Sql sql = scope.SqlContext.Sql().Select("*").From(DbName).Where<EditingLook>(e => e.NodeUid == nodeUid && e.UserId == currentUserId);
+                scope.Database.Delete<EditingLook>(sql);
+            }
         }
         #endregion // DeleteEditingEntry
 
-        #endregion // Methods
+        #region GetEditingEntry
+        //-----------------------------------------------------------------
+        /// <summary>
+        /// Gets an existing editing entry
+        /// </summary>
+        /// <param name="nodeUid">The uid of the node</param>
+        /// <returns>The editing entry</returns>
+        //-----------------------------------------------------------------
+        internal EditingLook GetEditingEntry(string nodeUid)
+        {
+            EditingLook result = null;
+            IList<EditingLook> resultList = null;
+
+            using (var scope = Current.ScopeProvider.CreateScope(autoComplete: true))
+            {
+                // get editing entry
+                Sql sql = scope.SqlContext.Sql().Select("*").From(DbName).Where<EditingLook>(x => x.NodeUid == nodeUid);
+                resultList = scope.Database.Fetch<EditingLook>(sql);
+            }
+            
+            // check found entries
+            foreach (EditingLook entry in resultList)
+            {
+                if (entry != null && entry.SubscribeDate.AddMinutes(2) < DateTime.Now)
+                {
+                    // entry is expired -> delete this entry
+                    this.DeleteEditingEntry(entry.NodeUid, entry.UserId);
+                }
+                else
+                {
+                    result = entry;
+                }
+            }
+            
+            return result;
+        }
+        #endregion // GetEditingEntry
     }
 }

@@ -28,21 +28,11 @@ namespace byte5.EditingLookContentApp.Controllers
         /// Gets the user that is currently editing the node.
         /// </summary>
         /// <param name="nodeUid">The uid of the node to get user for</param>
-        /// <returns>the current user</returns>
+        /// <returns>The current user.</returns>
         //-----------------------------------------------------------------
         [HttpGet]
         public Umbraco.Core.Models.Membership.IUser GetCurrentUser(string nodeUid)
         {
-            // TEST:
-            this.CreateEditingEntry(nodeUid, 7);
-            this.GetEditingEntry(nodeUid);
-            this.UpdateEditingEntry(nodeUid, 1);
-            this.GetEditingEntry(nodeUid);
-            this.DeleteEditingEntry(nodeUid, 1);
-
-
-
-
             EditingLook entry = this.GetEditingEntry(nodeUid);
 
             if (entry != null)
@@ -58,11 +48,11 @@ namespace byte5.EditingLookContentApp.Controllers
         #region CreateEditingEntry
         //-----------------------------------------------------------------
         /// <summary>
-        /// Creates and saves a new editing entry.
+        /// Creates and saves a new editing entry or if it already exists, updates it.
         /// </summary>
         /// <param name="nodeUid">The uid of the node</param>
         /// <param name="currentUserId">the id of the current user</param>
-        /// <returns>The created EditingLook</returns>
+        /// <returns>The created or updated EditingLook</returns>
         //-----------------------------------------------------------------
         [HttpPost]
         public EditingLook CreateEditingEntry(string nodeUid, int currentUserId)
@@ -97,7 +87,7 @@ namespace byte5.EditingLookContentApp.Controllers
         #region UpdateEditingEntry
         //-----------------------------------------------------------------
         /// <summary>
-        /// Updates an existing editing entry or creates it.
+        /// Updates an existing editing entry, or if it doesn't exist, creates it.
         /// </summary>
         /// <param name="nodeUid">The uid of the node</param>
         /// <param name="currentUserId">The id of the current user</param>
@@ -112,15 +102,13 @@ namespace byte5.EditingLookContentApp.Controllers
 
             if (entry != null)
             {
+                entry.UserId = currentUserId;
+                entry.SubscribeDate = DateTime.Now;
+
                 using (var scope = Current.ScopeProvider.CreateScope(autoComplete: true))
                 {
                     // update editing entry
-                    NPocoSqlExtensions.SqlUpd<EditingLook> update = new NPocoSqlExtensions.SqlUpd<EditingLook>(scope.SqlContext);
-                    update.SetExpressions.Add(new Tuple<string, object>("UserId", currentUserId));
-                    update.SetExpressions.Add(new Tuple<string, object>("SubscribeDate", DateTime.Now));
-
-                    Sql sql = scope.SqlContext.Sql().Update<EditingLook>(e => update);
-                    scope.Database.Update<EditingLook>(sql);
+                    scope.Database.Update(entry);
                 }
             }
             else
@@ -157,35 +145,27 @@ namespace byte5.EditingLookContentApp.Controllers
         #region GetEditingEntry
         //-----------------------------------------------------------------
         /// <summary>
-        /// Gets an existing editing entry
+        /// Gets the current editing entry with specific nodeUid.
         /// </summary>
-        /// <param name="nodeUid">The uid of the node</param>
-        /// <returns>The editing entry</returns>
+        /// <param name="nodeUid">The uid of the node to get the entry for</param>
+        /// <returns>The current editing entry</returns>
         //-----------------------------------------------------------------
         internal EditingLook GetEditingEntry(string nodeUid)
         {
             EditingLook result = null;
-            IList<EditingLook> resultList = null;
 
             using (var scope = Current.ScopeProvider.CreateScope(autoComplete: true))
             {
                 // get editing entry
                 Sql sql = scope.SqlContext.Sql().Select("*").From(DbName).Where<EditingLook>(x => x.NodeUid == nodeUid);
-                resultList = scope.Database.Fetch<EditingLook>(sql);
+                result = scope.Database.SingleOrDefault<EditingLook>(sql);
             }
             
-            // check found entries
-            foreach (EditingLook entry in resultList)
+            if (result != null && result.SubscribeDate.AddMinutes(2) < DateTime.Now)
             {
-                if (entry != null && entry.SubscribeDate.AddMinutes(2) < DateTime.Now)
-                {
-                    // entry is expired -> delete this entry
-                    this.DeleteEditingEntry(entry.NodeUid, entry.UserId);
-                }
-                else
-                {
-                    result = entry;
-                }
+                // entry is expired -> delete this entry
+                this.DeleteEditingEntry(result.NodeUid, result.UserId);
+                return null;
             }
             
             return result;
